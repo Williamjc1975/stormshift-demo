@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Atlantic Edge Rebooking Alpha</title>
+<style>
+:root{--navy:#073b4c;--blue:#087e8b;--foam:#eaf8f7;--yellow:#ffd166;--red:#c62828;--green:#18794e;--ink:#102a2e;--white:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f2f7f7;color:var(--ink)}
+header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:18px 16px 14px;position:sticky;top:0;z-index:5;box-shadow:0 2px 12px #0002}
+header h1{font-size:1.2rem;margin:0}.header-inner{display:flex;align-items:center;gap:12px}.header-thumb{width:64px;height:64px;border-radius:14px;object-fit:cover;border:2px solid #ffffff88}.sub{margin:4px 0 0;font-size:.85rem;opacity:.9}.sample{display:inline-block;margin-top:8px;background:var(--yellow);color:#3d2b00;font-weight:800;padding:5px 9px;border-radius:999px;font-size:.75rem}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:#fff;position:sticky;top:91px;z-index:4;border-bottom:1px solid #d4e2e2}
+button{font:inherit;touch-action:manipulation}.tab,.action,.slot,.reset{min-height:54px;border:0;border-radius:14px;font-weight:800;cursor:pointer}.tab{background:#dcebea;color:var(--navy)}.tab.active{background:var(--navy);color:#fff}
+main{max-width:760px;margin:auto;padding:14px 14px 90px}.view{display:none}.view.active{display:block}h2{margin:8px 0 4px}.hint{margin:0 0 14px;color:#50676a}.card{background:#fff;border-radius:18px;padding:15px;margin:12px 0;box-shadow:0 3px 16px #093b4912;border:1px solid #dce9e8}.card.overdue{border:3px solid var(--red);background:#fff4f3}.row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.time{font-size:1.3rem;font-weight:900}.meta{color:#52686b;font-size:.92rem;margin:5px 0}.pill{background:#e4f1f0;border-radius:999px;padding:6px 10px;font-weight:800;white-space:nowrap}.danger{color:var(--red);font-weight:900}.action{width:100%;background:var(--red);color:#fff;margin-top:10px;padding:12px}.action.green{background:var(--green)}.action.secondary{background:#dfeceb;color:var(--navy)}.action:disabled{opacity:.45;cursor:not-allowed}.slots{display:grid;gap:9px;margin-top:12px}.slot{text-align:left;padding:12px;background:#e6f5f3;color:var(--navy);border:2px solid #a8d9d4}.slot strong{display:block}.empty{text-align:center;padding:28px;background:#fff;border-radius:18px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{background:#fff;border-radius:18px;padding:18px;border:1px solid #dce9e8}.stat b{display:block;font-size:2rem;color:var(--navy)}.money{color:var(--red)!important}.reset{width:100%;background:#dce7e6;color:#233;margin-top:20px}.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#102a2e;color:#fff;padding:12px 18px;border-radius:999px;font-weight:800;display:none;z-index:10;max-width:90%;text-align:center}
+@media(min-width:650px){header{text-align:center}nav{top:91px;max-width:760px;margin:auto}.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{margin:0}}
+</style></head>
+<body>
+<header><div class="header-inner"><img class="header-thumb" src="assets/weather-rebooking.png" alt="Waterproof booking phone beside a coastal weather map"><div><h1>Atlantic Edge Surf School</h1><p class="sub">Weather cancellation & rebooking alpha</p><span class="sample">SAMPLE DATA</span></div></div></header>
+<nav aria-label="Main views"><button class="tab active" data-view="today">Today</button><button class="tab" data-view="rebook">Rebook <span id="queueBadge"></span></button><button class="tab" data-view="money">Money</button></nav>
+<main>
+<section id="today" class="view active"><h2>Today's sessions</h2><p class="hint">Large one-tap controls for use outdoors.</p><div id="sessionList" class="cards"></div></section>
+<section id="rebook" class="view"><h2>To rebook</h2><p class="hint">Choose one of the next three sessions with enough places.</p><div id="rebookList"></div></section>
+<section id="money" class="view"><h2>Money at risk</h2><p class="hint">Live totals from bookings still waiting.</p><div class="stats"><div class="stat"><span>Bookings waiting</span><b id="waitCount">0</b></div><div class="stat"><span>People affected</span><b id="peopleCount">0</b></div><div class="stat" style="grid-column:1/-1"><span>Lesson value at risk</span><b id="riskValue" class="money">€0</b><small>Calculated at €45 per person.</small></div></div><button class="reset" id="resetBtn">Reset sample data</button></section>
+</main><div class="toast" id="toast"></div>
+<script>
+const PRICE=45, CAPACITY=12, KEY='atlanticEdgeAlphaV1';
+const initial={
+ sessions:[
+  {id:'s1',date:'2026-10-19',time:'09:00',instructor:'Aoife',cancelled:false},{id:'s2',date:'2026-10-19',time:'11:00',instructor:'Cian',cancelled:false},{id:'s3',date:'2026-10-19',time:'13:00',instructor:'Maeve',cancelled:false},{id:'s4',date:'2026-10-19',time:'15:00',instructor:'Liam',cancelled:false},{id:'s5',date:'2026-10-19',time:'17:00',instructor:'Orla',cancelled:false},{id:'s6',date:'2026-10-19',time:'19:00',instructor:'Cian',cancelled:false},
+  {id:'s7',date:'2026-10-20',time:'09:00',instructor:'Aoife',cancelled:false},{id:'s8',date:'2026-10-20',time:'11:00',instructor:'Liam',cancelled:false},{id:'s9',date:'2026-10-20',time:'13:00',instructor:'Maeve',cancelled:false},{id:'s10',date:'2026-10-21',time:'09:00',instructor:'Orla',cancelled:false},{id:'s11',date:'2026-10-21',time:'11:00',instructor:'Cian',cancelled:false},{id:'s12',date:'2026-10-21',time:'13:00',instructor:'Aoife',cancelled:false}
+ ],
+ bookings:[
+  {id:'b1',name:'Emma Byrne',size:2,contact:'087 555 0101',sessionId:'s1',status:'booked'},
+  {id:'b2',name:'Noah Kelly',size:4,contact:'086 555 0102',sessionId:'s1',status:'booked'},
+  {id:'b3',name:'Saoirse Ryan',size:3,contact:'085 555 0103',sessionId:'s2',status:'booked'},
+  {id:'b4',name:'Jack Murphy',size:5,contact:'083 555 0104',sessionId:'s2',status:'booked'},
+  {id:'b5',name:'Mia Walsh',size:2,contact:'089 555 0105',sessionId:'s3',status:'booked'},
+  {id:'b6',name:'Finn Doyle',size:4,contact:'087 555 0106',sessionId:'s4',status:'booked'},
+  {id:'b7',name:'Grace Nolan',size:3,contact:'086 555 0107',sessionId:'s5',status:'booked'},
+  {id:'b8',name:'Luke Brennan',size:2,contact:'085 555 0108',sessionId:'s6',status:'booked'},
+  {id:'b9',name:'Ava Flynn',size:3,contact:'083 555 0109',sessionId:null,status:'waiting',cancelledAt:'2026-10-16T09:00:00Z'},
+  {id:'b10',name:'Conor Hayes',size:2,contact:'089 555 0110',sessionId:'s7',status:'booked'},
+  {id:'b11',name:'Ella Quinn',size:6,contact:'087 555 0111',sessionId:'s8',status:'booked'},
+  {id:'b12',name:'Oisín Reid',size:4,contact:'086 555 0112',sessionId:'s9',status:'booked'}
+ ]};
+let state=load();
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||structuredClone(initial)}catch(e){return JSON.parse(JSON.stringify(initial))}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+function used(id){return state.bookings.filter(b=>b.sessionId===id&&b.status==='booked').reduce((n,b)=>n+b.size,0)}
+function dateLabel(s){return new Date(s.date+'T12:00:00').toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'short'})+' · '+s.time}
+function showToast(t){const x=document.getElementById('toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2200)}
+function cancelSession(id){const s=state.sessions.find(x=>x.id===id);if(!s||s.cancelled)return;if(!confirm('Cancel this session and move every booking to the rebook list?'))return;s.cancelled=true;const stamp=new Date().toISOString();state.bookings.filter(b=>b.sessionId===id&&b.status==='booked').forEach(b=>{b.sessionId=null;b.status='waiting';b.cancelledAt=stamp});save();showToast('Session cancelled. Bookings moved to Rebook.');}
+function optionsFor(b){return state.sessions.filter(s=>!s.cancelled && CAPACITY-used(s.id)>=b.size).sort((a,z)=>(a.date+a.time).localeCompare(z.date+z.time)).slice(0,3)}
+function rebook(bid,sid){const b=state.bookings.find(x=>x.id===bid);if(!b)return;b.sessionId=sid;b.status='booked';delete b.cancelledAt;save();showToast(b.name+' rebooked.');}
+function isOverdue(b){return b.status==='waiting' && (Date.now()-new Date(b.cancelledAt).getTime())>48*3600000}
+function render(){
+ const today='2026-10-19';
+ document.getElementById('sessionList').innerHTML=state.sessions.filter(s=>s.date===today).map(s=>{const n=used(s.id),bs=state.bookings.filter(b=>b.sessionId===s.id&&b.status==='booked');return `<article class="card"><div class="row"><div><div class="time">${s.time}</div><div class="meta">Instructor: ${s.instructor}</div></div><span class="pill">${CAPACITY-n} places left</span></div><div class="meta">${bs.length?bs.map(b=>`${b.name} (${b.size})`).join(' · '):'No bookings'}</div><button class="action" ${s.cancelled?'disabled':''} onclick="cancelSession('${s.id}')">${s.cancelled?'Session cancelled':'Cancel session'}</button></article>`}).join('');
+ const q=state.bookings.filter(b=>b.status==='waiting');document.getElementById('queueBadge').textContent=q.length?'('+q.length+')':'';
+ document.getElementById('rebookList').innerHTML=q.length?q.map(b=>{const opts=optionsFor(b);return `<article class="card ${isOverdue(b)?'overdue':''}"><div class="row"><div><strong>${b.name}</strong><div class="meta">Group of ${b.size} · ${b.contact}</div></div>${isOverdue(b)?'<span class="danger">48+ HOURS</span>':''}</div><div class="slots">${opts.length?opts.map(s=>`<button class="slot" onclick="rebook('${b.id}','${s.id}')"><strong>${dateLabel(s)}</strong>${CAPACITY-used(s.id)} places free · Tap to rebook</button>`).join(''):'<div class="danger">No suitable session has enough room.</div>'}</div></article>`}).join(''):'<div class="empty"><strong>Rebook list clear</strong><p>No affected bookings are waiting.</p></div>';
+ document.getElementById('waitCount').textContent=q.length;const people=q.reduce((n,b)=>n+b.size,0);document.getElementById('peopleCount').textContent=people;document.getElementById('riskValue').textContent='€'+(people*PRICE).toLocaleString('en-IE');
+}
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab,.view').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.view).classList.add('active')}));
+document.getElementById('resetBtn').onclick=()=>{if(confirm('Restore the original sample data?')){state=JSON.parse(JSON.stringify(initial));save();showToast('Sample data restored.')}};render();
+</script></body></html>
